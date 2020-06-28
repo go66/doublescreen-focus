@@ -66,6 +66,19 @@ LRESULT CALLBACK mouseHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 
 BOOL CDoubleScreenFocusApp::InitInstance()
 {
+	TCHAR lpszTempPath[256] = { 0 };
+	CString sTempFile;
+	CFile myFile;
+	CFileException fileException;
+	
+	GetTempPath(256, lpszTempPath);
+	sTempFile.Format(L"%s/DSF_TEMP_5B614B92-FD0E-422C-831E-CDC7E3FDB124.txt", lpszTempPath);
+
+	// mutex
+	if (!myFile.Open(sTempFile, CFile::modeCreate | CFile::modeReadWrite, &fileException))
+	{
+		return FALSE;
+	}
 
 	INITCOMMONCONTROLSEX InitCtrls;
 	InitCtrls.dwSize = sizeof(InitCtrls);
@@ -78,10 +91,10 @@ BOOL CDoubleScreenFocusApp::InitInstance()
 	CShellManager *pShellManager = new CShellManager;
 	CMFCVisualManager::SetDefaultManager(RUNTIME_CLASS(CMFCVisualManagerWindows));
 
-
 	CDoubleScreenFocusDlg dlg;
 	m_pMainWnd = &dlg;
 
+	// two screen
 	auto monitors = ::GetSystemMetrics(SM_CMONITORS);
 	if (monitors != 2) return FALSE;
 
