@@ -7,6 +7,10 @@
 #include "DoubleScreenFocus.h"
 #include "DoubleScreenFocusDlg.h"
 
+#include "spdlog/spdlog.h"
+//#include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -34,6 +38,32 @@ LRESULT CALLBACK mouseHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 	int x = p->pt.x;
 	int y = p->pt.y;
 
+	static HWND hd = GetDesktopWindow();
+	static int zoom = GetDpiForWindow(hd);
+
+	static double dpi = -1;
+
+	if(dpi <= 0)
+	{
+		switch (zoom) {
+		case 120:
+			dpi = 1.25;
+			break;
+		case 144:
+			dpi = 1.5;
+			break;
+		case 192:
+			dpi = 2;
+			break;
+		case 96:
+		default:
+			dpi = 1;
+			break;
+		}
+
+		spdlog::debug("dip:{0} ", dpi);
+	}
+
 	static auto cx = ::GetSystemMetrics(SM_CXSCREEN);
 	static auto cy = ::GetSystemMetrics(SM_CYSCREEN);
 
@@ -42,22 +72,26 @@ LRESULT CALLBACK mouseHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 	static auto cxv = ::GetSystemMetrics(SM_CXVIRTUALSCREEN);
 	static auto cyv = ::GetSystemMetrics(SM_CYVIRTUALSCREEN);
 
-	static bool is_main_screen = false;
+	static bool s_is_main_screen = false;
 
 	if (x <= cx)
 	{
-		if (!is_main_screen)
+		if (!s_is_main_screen)
 		{
-			theApp.m_pMainWnd->SetWindowPos(&CWnd::wndTopMost, cx, yv, cxv, cyv, SWP_SHOWWINDOW);
-			is_main_screen = true;
+			theApp.m_pMainWnd->SetWindowPos(&CWnd::wndTopMost, cx*dpi, yv, cxv-cx, cyv, SWP_SHOWWINDOW);
+			s_is_main_screen = true;
+
+			spdlog::debug("main_screen:{6} cx:{0} cy:{1} xv{2} yv{3} cxv{4} cyv{5}", cx, cy, xv, yv, cxv, cyv, s_is_main_screen);
 		}
 	}
 	else
 	{
-		if (is_main_screen)
+		if (s_is_main_screen)
 		{
 			theApp.m_pMainWnd->SetWindowPos(&CWnd::wndTopMost, 0, 0, cx, cy, SWP_SHOWWINDOW);
-			is_main_screen = false;
+			s_is_main_screen = false;
+
+			spdlog::debug("main_screen:{6} cx:{0} cy:{1} xv{2} yv{3} cxv{4} cyv{5}", cx, cy, xv, yv, cxv, cyv, s_is_main_screen);
 		}
 	}
 
@@ -90,6 +124,11 @@ BOOL CDoubleScreenFocusApp::InitInstance()
 
 	CShellManager *pShellManager = new CShellManager;
 	CMFCVisualManager::SetDefaultManager(RUNTIME_CLASS(CMFCVisualManagerWindows));
+
+	//auto logger = spdlog::basic_logger_mt("basic_logger", "basic.log");
+	//spdlog::set_default_logger(logger);
+
+	spdlog::set_level(spdlog::level::debug); // Set global log level to debug
 
 	CDoubleScreenFocusDlg dlg;
 	m_pMainWnd = &dlg;
