@@ -74,23 +74,24 @@ LRESULT CALLBACK mouseHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 
 	static bool s_is_main_screen = false;
 
-	if (x <= cx)
+	constexpr int offset = 10;	
+	if (x <= cx - offset)
 	{
 		if (!s_is_main_screen)
 		{
 			theApp.m_pMainWnd->SetWindowPos(&CWnd::wndTopMost, cx*dpi, yv, cxv-cx, cyv, SWP_SHOWWINDOW);
 			s_is_main_screen = true;
-
+			spdlog::debug("position x:{0} y:{1}", x, y);
 			spdlog::debug("main_screen:{6} cx:{0} cy:{1} xv{2} yv{3} cxv{4} cyv{5}", cx, cy, xv, yv, cxv, cyv, s_is_main_screen);
 		}
 	}
-	else
+	else if (x >= cx + offset)
 	{
 		if (s_is_main_screen)
 		{
 			theApp.m_pMainWnd->SetWindowPos(&CWnd::wndTopMost, 0, 0, cx, cy, SWP_SHOWWINDOW);
 			s_is_main_screen = false;
-
+			spdlog::debug("position x:{0} y:{1}", x, y);
 			spdlog::debug("main_screen:{6} cx:{0} cy:{1} xv{2} yv{3} cxv{4} cyv{5}", cx, cy, xv, yv, cxv, cyv, s_is_main_screen);
 		}
 	}
